@@ -1,26 +1,12 @@
 const Post = require("../models/posts.js");
 const User = require("../models/User.js");
 const Comment = require("../models/comment.js");
-const getUser = async (username) => {
-  try {
-    const user = await User.findOne({ username });
-    return user;
-  } catch (error) {
-    console.error(error.message);
-    throw new Error("Error fetching user");
-  }
-};
-const getAndDeleteComments = async (commentArray) => {
-  try {
-    for (const commentid of commentArray) {
-      await Comment.findByIdAndDelete(commentid);
-    }
-    return { message: "Comments deleted successfully" };
-  } catch (error) {
-    console.error(error.message);
-    throw new Error("Error deleting user comment");
-  }
-};
+const {
+  getUser,
+  getAndDeleteComments,
+  getOnePost,
+} = require("../util/other.js");
+
 const postController = {
   createPost: async (req, res) => {
     const { post, username } = req.body;
@@ -101,6 +87,29 @@ const postController = {
       console.log(error.message);
       return res.status(401).json({ message: "internal server error" });
     }
+  },
+  likepost: async (req, res) => {
+    const { postid, username } = req.body;
+    if (!postid || !username) {
+      return res.status(401).json({ message: "please include post id" });
+    }
+    let post = await getOnePost(postid);
+    const user = await getUser(username);
+    if (!post || !user) {
+      return res.status(401).json({ message: "invalid credentials" });
+    }
+    let message;
+    if (post.Likes.includes(user._id)) {
+      post.Likes = post.Likes.filter((id) => {
+        id !== user._id;
+        message = "post liked successfully";
+      });
+    } else {
+      post.Likes.push(user._id);
+    }
+    message = "post unliked successfully";
+    post.save();
+    return res.status(201).json({ message, post });
   },
 };
 module.exports = postController;

@@ -66,7 +66,15 @@ const userController = {
       const token = jwt.sign({ _id: user._id }, SECRET, {
         expiresIn: "1d",
       });
-      return res.status(201).json({ token: token, message: "user logged in" });
+
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: true,
+          maxAge: 3600000,
+        }) // Set the token cookie
+        .status(201)
+        .json({ message: "User logged in" });
     } catch (error) {
       console.log(error.message);
       res.status(401).json({ message: "internal server error " });
@@ -74,7 +82,7 @@ const userController = {
   },
   checkAuth: async (req, res, next) => {
     try {
-      const token = req.headers["authorise"];
+      const token = req.cookies.token;
       if (!token) {
         return res.status(401).json({ message: "token not found" });
       }
@@ -120,6 +128,10 @@ const userController = {
       console.log(error.message);
       return res.status(401).json({ message: "internal server error" });
     }
+  },
+  logout: async (req, res) => {
+    res.clearCookie("token", { httpOnly: true, secure: true });
+    res.status(200).json({ message: "User logged out successfully" });
   },
 };
 module.exports = userController;
