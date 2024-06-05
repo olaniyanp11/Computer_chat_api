@@ -111,5 +111,15 @@ const postController = {
     post.save();
     return res.status(201).json({ message, post });
   },
+  getAllPosts: async (req, res) => {
+   try {
+     const posts = Post.find();
+     res.status(201).json({ message: "success", posts: posts });
+   } catch (error) {
+     console.log(error.message);
+     return res.status(401).json({ message: "error getting posts" });
+   }
+    
+  }
 };
 module.exports = postController;

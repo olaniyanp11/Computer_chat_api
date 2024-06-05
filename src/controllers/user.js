@@ -16,6 +16,17 @@ const userController = {
       res.status(401).json({ message: "password length must be above 5 " });
     }
     try {
+      let olduser = await User.findOne({ email: email });
+      if (olduser) {
+        return res.status(401).json({ message: "user exists with the email " });
+      } else {
+        olduser = await User.findOne({ username: username });
+        if (olduser) {
+          return res
+            .status(401)
+            .json({ message: "user exists with the username " });
+        }
+      }
       const hashedpassword = await bcrypt.hash(password, 10);
       password = hashedpassword;
       const newuser = new User({
@@ -56,42 +67,49 @@ const userController = {
       } else {
         user = await User.findOne({ email: email });
       }
-      console.log(user);
       if (!user) {
-        return res.status(401).json({ message: "invalid username" });
+        return res.status(400).json({ message: "invalid username" });
       }
       const isValid = bcrypt.compareSync(password, user.password);
-      if (!isValid)
+      if (!isValid) {
         return res.status(401).json({ message: "invalid password" });
-      const token = jwt.sign({ _id: user._id }, SECRET, {
+      }
+      const AccessToken = jwt.sign({ _id: user._id }, SECRET, {
+        expiresIn: "1d",
+      });
+      const refreshToken = jwt.sign({ _id: user._id }, SECRET, {
         expiresIn: "1d",
       });
 
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: false,
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        sameSite: "None",
+      }); // Set the token cookie
       res
-        .cookie("token", token, {
-          httpOnly: true,
-          secure: true,
-          maxAge: 3600000,
-        }) // Set the token cookie
         .status(201)
-        .json({ message: "User logged in" });
+        .json({ message: "User logged in", user: user, AccessToken });
     } catch (error) {
       console.log(error.message);
-      res.status(401).json({ message: "internal server error " });
+      res.status(400).json({ message: "internal server error logging in" });
     }
   },
   checkAuth: async (req, res, next) => {
     try {
-      const token = req.cookies.token;
-      if (!token) {
+      console.log(req.headers.cookie);
+      const refreshToken = req.cookies.refreshToken;
+      console.log(refreshToken);
+      if (!refreshToken) {
+        console.log("no token");
         return res.status(401).json({ message: "token not found" });
       }
-      const isValid = jwt.verify(token, SECRET);
+      const isValid = jwt.verify(refreshToken, SECRET);
       if (!isValid) {
         return res.status(401).json({ message: "invalid token" });
       }
-      const id = jwt.decode(token);
-      const user = await User.findOne({ _id: id });
+      const id = jwt.decode(refreshToken);
+      const user = await User.findOne({ _id: id._id });
       if (!user) {
         return res.status(401).json({ message: "invalid token id" });
       }
@@ -99,7 +117,9 @@ const userController = {
       next();
     } catch (error) {
       console.log(error.message);
-      return res.status(401).json({ message: "internal server error" });
+      return res
+        .status(401)
+        .json({ message: "internal server error from middleware" });
     }
   },
   getAllUsers: async (req, res) => {
@@ -130,8 +150,19 @@ const userController = {
     }
   },
   logout: async (req, res) => {
-    res.clearCookie("token", { httpOnly: true, secure: true });
+    console.log(req.cookies);
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: false,
+      sameSite: "None",
+    });
     res.status(200).json({ message: "User logged out successfully" });
+  },
+  refreshUserInfo: (req, res) => {
+    const user = req.user;
+    console.log("entered");
+    console.log(user);
+    res.status(200).json({ user: user });
   },
 };
 module.exports = userController;

@@ -35,12 +35,17 @@ app.use(logger.dev, logger.combined);
 app.use(cookieParser());
 app.use(cors());
 app.use(helmet());
-
-// This middleware adds the json header to every response
-app.use("*", (req, res, next) => {
-  res.setHeader("Content-Type", "application/json");
-  next();
-});
+app.use(
+  cors({
+    origin: "http://localhost:5173", // frontend URL
+    credentials: true,
+  })
+);
+// // This middleware adds the json header to every response
+// app.use("*", (req, res, next) => {
+//   res.setHeader("Content-Type", "application/json");
+//   next();
+// });
 
 // Assign Routes
 
