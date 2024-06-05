@@ -18,10 +18,9 @@ const logger = require("@util/logger");
 
 // Load .env Enviroment Variables to process.env
 
-require("mandatoryenv").load(["DB_URL", "PORT", "SECRET"]);
-
-const { PORT, SECRET, DB_URL } = process.env;
-
+const port = process.env.PORT
+const SECRET = process.env.SECRET
+const DB_URL = process.env.DB_URL;
 // Instantiate an Express Application
 const app = express();
 
@@ -35,12 +34,21 @@ app.use(logger.dev, logger.combined);
 app.use(cookieParser());
 app.use(cors());
 app.use(helmet());
-app.use(
-  cors({
-    origin: "http://localhost:5173", // frontend URL
-    credentials: true,
-  })
-);
+const allowedOrigins = [
+  "http://localhost:5173", // Adjust to match your front-end origin(s)
+  "http://localhost:4000", // Another front-end origin
+  // Add more origins as needed
+];
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true, // Allow cookies to be sent
+};
 // // This middleware adds the json header to every response
 // app.use("*", (req, res, next) => {
 //   res.setHeader("Content-Type", "application/json");
@@ -63,9 +71,12 @@ app.use("*", (req, res) => {
 });
 
 // Open Server on selected Port
-app.listen(PORT, () => {
-  console.info("Server listening on port ", PORT);
+app.listen(port, () => {
+  console.info("Server listening on port ", port);
+  console.log(DB_URL);
   mongoose.connect(DB_URL).then(() => {
     console.log("Connected to database");
+  }).catch((error) => {
+    console.log(error);
   });
 });
