@@ -34,7 +34,8 @@ app.use(logger.dev, logger.combined);
 app.use(cookieParser());
 app.use(cors());
 const allowedOrigins = [
-  "http://localhost:5173", // Your front-end origin
+  "http://localhost:5173",// Your front-end origin
+ "https://computer-chat-client.vercel.app",
   // Add more origins as needed
 ];
 
