@@ -33,12 +33,11 @@ app.use(logger.dev, logger.combined);
 
 app.use(cookieParser());
 app.use(cors());
-app.use(helmet());
 const allowedOrigins = [
-  "http://localhost:5173", // Adjust to match your front-end origin(s)
-  "http://localhost:4000", // Another front-end origin
+  "http://localhost:5173", // Your front-end origin
   // Add more origins as needed
 ];
+
 const corsOptions = {
   origin: function (origin, callback) {
     if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
@@ -47,13 +46,19 @@ const corsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true, // Allow cookies to be sent
+  credentials: true, // Allow credentials (cookies, etc.)
+  allowedHeaders: ["Content-Type", "Authorization", "AccessToken"], // Specify allowed headers
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Specify allowed methods
 };
-// // This middleware adds the json header to every response
-// app.use("*", (req, res, next) => {
-//   res.setHeader("Content-Type", "application/json");
-//   next();
-// });
+
+app.use(cors(corsOptions));
+
+// Enable pre-flight across-the-board
+app.options("*", cors(corsOptions));
+app.use("*", (req, res, next) => {
+  res.setHeader("Content-Type", "application/json");
+  next();
+});
 
 // Assign Routes
 

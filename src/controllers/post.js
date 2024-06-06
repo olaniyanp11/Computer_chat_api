@@ -113,7 +113,7 @@ const postController = {
   },
   getAllPosts: async (req, res) => {
    try {
-     const posts = Post.find();
+     const posts =await Post.find();
      res.status(201).json({ message: "success", posts: posts });
    } catch (error) {
      console.log(error.message);

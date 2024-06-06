@@ -5,6 +5,7 @@ const postController = require("../controllers/post.js");
 router.post("/create", postController.createPost);
 router.post("/like", postController.likepost);
 router.get("/get/:id", postController.getPost);
+router.get("/get/All/post", postController.getAllPosts);
 router.delete("/delete/:id", postController.deletePost);
 router.patch("/update/:id", postController.updatePost);
 

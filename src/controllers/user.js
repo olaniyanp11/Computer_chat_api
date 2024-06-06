@@ -97,18 +97,18 @@ const userController = {
   },
   checkAuth: async (req, res, next) => {
     try {
-      console.log(req.headers.cookie);
-      const refreshToken = req.cookies.refreshToken;
-      console.log(refreshToken);
-      if (!refreshToken) {
+      console.log(req.headers);
+      const token = req.headers.accesstoken;
+      console.log(req.headers);
+      if (!token) {
         console.log("no token");
         return res.status(401).json({ message: "token not found" });
       }
-      const isValid = jwt.verify(refreshToken, SECRET);
+      const isValid = jwt.verify(token, SECRET);
       if (!isValid) {
         return res.status(401).json({ message: "invalid token" });
       }
-      const id = jwt.decode(refreshToken);
+      const id = jwt.decode(token);
       const user = await User.findOne({ _id: id._id });
       if (!user) {
         return res.status(401).json({ message: "invalid token id" });
@@ -161,8 +161,11 @@ const userController = {
   refreshUserInfo: (req, res) => {
     const user = req.user;
     console.log("entered");
+    const AccessToken = jwt.sign({ _id: user._id }, SECRET, {
+      expiresIn: "1d",
+    });
     console.log(user);
-    res.status(200).json({ user: user });
+    res.status(200).json({ user: user, AccessToken });
   },
 };
 module.exports = userController;
